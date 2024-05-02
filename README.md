@@ -16,7 +16,7 @@ C++ library to manage the GPIO header of the Nvidia JETSON boards
 
 - ``sudo ./led_spi_control"
 
-- The first led should blink green and red after 1 second interval"
+- Provide the LED number as input after running the above command. The number should be between 0 & 11. The respective LED will blink."
 
 
 
