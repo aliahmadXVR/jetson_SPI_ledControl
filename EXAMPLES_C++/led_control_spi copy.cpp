@@ -1,235 +1,307 @@
-/* Usage example of the JETGPIO library
- * Compile with: g++ -Wall -o led_control_spi led_control_spi.cpp -ljetgpio
- * Execute with: sudo ./led_control_spi
-*/
-
 #include <iostream>
 #include <unistd.h>
 #include <jetgpio.h>
 #include <algorithm>
+#include <bitset>
+#include <iomanip>
+#include <bitset>
+#include <cstring>
 
-#define NUM_OF_LEDS 12  //For this particular project
-#define ONE_LED_DATA 24
-#define BYTE_FOR_ONE_LED ONE_LED_DATA*3
-#define ON 0x06
-#define OFF 0x04
+/**
+ * LEDController class controls LED operations using SPI communication.
+ */
+class LEDController {
+private:
+    const int NUM_OF_LEDS;     // Number of LEDs
+    const int ONE_LED_DATA;    // Size of data for one LED (in bytes)
+    const int BYTE_FOR_ONE_LED;// Total bytes for one LED (including color data)
+    const char ON;             // Value representing LED ON state
+    const char OFF;            // Value representing LED OFF state
+    int SPI_init;              // SPI initialization status
+
+public:
+
+    /**
+     * Constructor to initialize the LEDController.
+     * @param numOfLEDs Number of LEDs in the system.
+     * @param oneLedData Size of data for one LED (in bytes).
+     * @param byteForOneLed Total bytes for one LED (including color data).
+     * @param onValue Value representing LED ON state.
+     * @param offValue Value representing LED OFF state.
+     */
+    LEDController(int numOfLEDs, int oneLedData, int byteForOneLed, char onValue, char offValue) 
+        : NUM_OF_LEDS(numOfLEDs), ONE_LED_DATA(oneLedData), BYTE_FOR_ONE_LED(byteForOneLed), ON(onValue), OFF(offValue), SPI_init(-1) {}
+
+    /**
+     * Initializes GPIO and SPI communication.
+     * @return true if initialization is successful, false otherwise.
+     */
+    bool initialize() {
+        int Init = gpioInitialise();
+        if (Init < 0) {
+            std::cerr << "JETGPIO initialization failed. Error code: " << Init << std::endl;
+            return false;
+        } else {
+            std::cout << "JETGPIO initialization OK. Return code: " << Init << std::endl;
+        }
 
 
-// void waitforTransfer(int )
+        SPI_init = spiOpen(0, 2500000, 0, 0, 8, 1, 1);
+        if (SPI_init < 0) {
+            std::cerr << "SPI port opening failed. Error code: " << SPI_init << std::endl;
+            gpioTerminate();
+            return false;
+        } else {
+            std::cout << "SPI port opened OK. Return code: " << SPI_init << std::endl;
+        }
 
-void turnOffLeds( char *data, int size)
-{
-   std::fill(data, data + size, OFF);
-     std::cout << "Data OFF: ";
-      for (int i = 0; i < size; ++i) {
-         std::cout << static_cast<int>(data[i]) << " "; // Assuming data contains integers representing LED states
+        return true;
+    }
+
+    /**
+     * Performs SPI data transfer.
+     * @param ledController Reference to the LEDController object.
+     * @param tx Transmit buffer.
+     * @param rx Receive buffer.
+     * @param dataSize Size of data to transfer.
+     */
+    void performSPITransfer(LEDController& ledController, char* tx, char* rx, int dataSize) {
+      int SPI_stat = spiXfer(ledController.getSpiInit(), tx, rx, dataSize);
+      if (SPI_stat >= 0) {
+         std::cout << "Transfered data" << std::endl;
+      } else {
+         std::cerr << "SPI transfer failed" << std::endl;
       }
-      std::cout << std::endl;
-}
-
-void turnOnLeds( char *data, int size)
-{
-   std::fill(data, data + size, ON);
-}
-
-void turnOn_LED( char *data, int size,int LED_number)  //LED Num starts from 0
-{
-   if (LED_number>=0 && LED_number<12)
-   {
-      int start_index = LED_number*ONE_LED_DATA;
-      std::fill( data+start_index,data+start_index+ONE_LED_DATA, ON);
-
-      std::cout << "Data ON: ";
-         for (int i = 0; i < size; ++i) {
-            std::cout << static_cast<int>(data[i]) << " "; // Assuming data contains integers representing LED states
-         }
-         std::cout << std::endl;
    }
-   else
-   {
-      std::cout<<"Wrong LED Number Specified. Must be between 0 & 11"<<std::endl;
+
+    /**
+     * Closes SPI port and terminates GPIO.
+     */
+    void close_spi_port() {
+        if (SPI_init >= 0) {
+            spiClose(SPI_init);
+        }
+        gpioTerminate();
+    }
+
+    /**
+     * Turns off all LEDs.
+     * @param data Pointer to the LED data array.
+     * @param size Size of the LED data array.
+     */
+    void turnOffLeds(char *data, int size) {
+        std::fill(data, data + size, OFF);
+        std::cout << "Data OFF: ";
+        for (int i = 0; i < size; ++i) {
+            std::cout << static_cast<int>(data[i]) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    /**
+     * Turns on all LEDs.
+     * @param data Pointer to the LED data array.
+     * @param size Size of the LED data array.
+     */
+    void turnOnLeds(char *data, int size) {
+        std::fill(data, data + size, ON);
+        std::cout << "Data ON: ";
+        for (int i = 0; i < size; ++i) {
+            std::cout << static_cast<int>(data[i]) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    /**
+     * Turns on a specific LED.
+     * @param data Pointer to the LED data array.
+     * @param size Size of the LED data array.
+     * @param LED_number LED number to turn on (0 to NUM_OF_LEDS - 1).
+     */
+    void turnOnLed(char *data, int size, int LED_number) {
+        if (LED_number >= 0 && LED_number < NUM_OF_LEDS) {
+            int start_index = LED_number * ONE_LED_DATA;
+            std::fill(data + start_index, data + start_index + ONE_LED_DATA, ON);
+            std::cout << "Data ON: ";
+            for (int i = 0; i < size; ++i) {
+                std::cout << static_cast<int>(data[i]) << " ";
+            }
+            std::cout << std::endl;
+        } else {
+            std::cout << "Wrong LED Number Specified. Must be between 0 & " << (NUM_OF_LEDS - 1) << std::endl;
+        }
+    }
+
+
+    /**
+     * Turns on LEDs with specified color.
+     * @param data Pointer to the LED data array.
+     * @param size Size of the LED data array.
+     * @param binaryNumber 72-bit binary number representing LED colors.
+     */
+    void turnLEDcolor(char *data, int size, const std::bitset<72>& binaryNumber) 
+    {
+        for (int i = 0; i < size; ++i) {
+        data[i] = binaryNumber[i];
+        }        
+        std::cout << "Data COLOR: ";
+        for (int i = 0; i < size; ++i) {
+            std::cout << static_cast<int>(data[i]) << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    /**
+     * Converts a decimal value to an 8-bit binary number.
+     * @param decimalValue Decimal value to convert.
+     * @return 8-bit binary representation of the decimal value.
+     */
+   std::bitset<8> convertToBinary(int decimalValue) {
+      if (decimalValue < 0 || decimalValue > 255) {
+         std::cerr << "Decimal value must be between 0 and 255" << std::endl;
+         return std::bitset<8>(0); // Return all zeros in case of invalid input
+      }
+      return std::bitset<8>(decimalValue);
    }
+
+    /**
+     * Converts three decimal values to a 24-bit binary number.
+     * @param decimalValue1 First decimal value.
+     * @param decimalValue2 Second decimal value.
+     * @param decimalValue3 Third decimal value.
+     * @return 24-bit binary representation of the three decimal values.
+     */
+   std::bitset<24> convertToBinary(int decimalValue1, int decimalValue2, int decimalValue3) {
+    if (decimalValue1 < 0 || decimalValue1 > 255 || decimalValue2 < 0 || decimalValue2 > 255 || decimalValue3 < 0 || decimalValue3 > 255) {
+        std::cerr << "Decimal values must be between 0 and 255" << std::endl;
+        return std::bitset<24>(0); // Return all zeros in case of invalid input
+    }
+
+    std::bitset<8> binaryValue1(decimalValue1);
+    std::bitset<8> binaryValue2(decimalValue2);
+    std::bitset<8> binaryValue3(decimalValue3);
+
+    std::bitset<24> result;
+
+    // Concatenate the three 8-bit binary numbers to form a single 24-bit binary number
+    for (int i = 0; i < 8; ++i) {
+        result[i] = binaryValue1[i];
+        result[i + 8] = binaryValue2[i];
+        result[i + 16] = binaryValue3[i];
+    }
+
+    return result;
+    }
+
+    /**
+     * Retrieves the SPI initialization status.
+     * @return SPI initialization status.
+     */
+    int getSpiInit() const {
+        return SPI_init;
+    }
+
+    /**
+     * Tests LED operation.
+     * 
+     * This function fills the LED data array with the LED colors represented by the provided 72-bit binary number.
+     * 
+     * @param data Pointer to the LED data array.
+     * @param size Size of the LED data array.
+     * @param binaryData 72-bit binary number representing LED colors.
+     */
+    std::bitset<72> expandBinary(std::bitset<24> binaryValue) {
+    std::bitset<72> expandedBinary;
+    int new_index = 0;
+
+    for (int i = 0; i < 24; i++) {
+        
+        if (binaryValue[i] == 1)
+        {
+            expandedBinary[new_index] = 0;
+            expandedBinary[new_index + 1] =1;
+            expandedBinary[new_index + 2] = 1;
+        }
+        else 
+        {
+            expandedBinary[new_index] = 0;
+            expandedBinary[new_index + 1] =0;
+            expandedBinary[new_index + 2] = 1;
+        }
+        new_index+=3;
+        
+    }
+
+    return expandedBinary;
+    }
+
+    private:
+    
+    /**
+     * Checks if a decimal value is valid (between 0 and 255).
+     * @param decimalValue Decimal value to check.
+     * @return true if the decimal value is valid, false otherwise.
+     */
+    bool isValidDecimalValue(int decimalValue) const {
+        return (decimalValue >= 0 && decimalValue <= 255);
+    }
+};
+
+int main() {
+    const int NUM_OF_LEDS = 12;  // For this particular project
+    const int ONE_LED_DATA = 24;
+    const int BYTE_FOR_ONE_LED = ONE_LED_DATA * 3;
+    const char ON = 0x06;
+    const char OFF = 0x04;
+
+    LEDController ledController(NUM_OF_LEDS, ONE_LED_DATA, BYTE_FOR_ONE_LED, ON, OFF);
+
+    if (!ledController.initialize()) {
+        return 1;
+    }
+
+ 
+   char* tx = new char[NUM_OF_LEDS * ONE_LED_DATA];
+    char rx[BYTE_FOR_ONE_LED] = {0,};
+
+    // Prompt the user to enter the LED number
+        int ledNumber= 0 ;
+        std::cout << "Enter the LED number to turn on (0 to 11): ";
+        std::cin >> ledNumber;
+
+    while (true)
+   {
+        //LEDs OFF
+      ledController.turnOffLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
+      ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
+      sleep(1);
+
+        //Specific LED ON
+    //   ledController.turnOnLed(tx, NUM_OF_LEDS * ONE_LED_DATA, ledNumber);
+    //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
+    //   sleep(1);
+
+            //LEDs ON
+    //   ledController.turnOnLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
+    //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
+    //   sleep(1);
+
+        //Conversion from Decimal to Binary(255,255,255)
+        std::bitset<24> binaryValue = ledController.convertToBinary(0 , 0, 255);
+        std::cout << "Binary representation: " << binaryValue << std::endl;
+
+        std::bitset<72> expandedBinary = ledController.expandBinary(binaryValue);
+        std::cout << "Expanded Binary representation: " << expandedBinary << std::endl;
    
-}
+        ledController.turnLEDcolor(tx, NUM_OF_LEDS * ONE_LED_DATA, expandedBinary) ;
+        sleep(1);
+       
+    }//end while(1)
 
-int main(int argc, char *argv[])
-{
-   int Init;
-   int SPI_init;
-   int SPI_stat;
-   int data_size = NUM_OF_LEDS*ONE_LED_DATA;
-   char* tx= new char [data_size];  //24
-   char rx[24] = {0,};
+    ledController.close_spi_port();
 
-   Init = gpioInitialise();
-   if (Init < 0)
-   {
-      /* JETGPIO initialization failed */
-      printf("JETGPIO initialization failed. Error code:  %d\n", Init);
-      exit(Init);
-   }
-   else
-   {
-      /* JETGPIO initialized okay*/
-      printf("JETGPIO initialization OK. Return code:  %d\n", Init);
-   }
-
-   SPI_init = spiOpen(0, 2500000, 0, 0, 8, 1, 1);  
-   if (SPI_init < 0)
-   {
-      /* SPI port opening failed */
-      printf("SPI port opening failed. Error code:  %d\n", SPI_init);
-      exit(Init);
-   }
-   else
-   {
-      /* SPI port opened  okay*/
-      printf("SPI port opened OK. Return code:  %d\n", SPI_init);
-   }
-
-
-   while(1)
-   {
-      turnOffLeds(tx,data_size);
-
-      SPI_stat = spiXfer(SPI_init, tx, rx,data_size);     //200   //72
-         if (SPI_stat >= 0)
-         {
-            printf("Transfered data: ");
-            printf("\n");
-         }
-         else
-         {
-            printf("SPI transfer failed\n");
-         }
-         sleep(1);
-
-         // turnOnLeds(tx,data_size);
-         turnOn_LED( tx, data_size,5) ;
-
-
-      SPI_stat = spiXfer(SPI_init, tx, rx,data_size);     //200   //72
-         if (SPI_stat >= 0)
-         {
-            printf("Transfered data: ");
-            printf("\n");
-         }
-         else
-         {
-            printf("SPI transfer failed\n");
-         }
-         sleep(1);
-}
-   
-   // Closing SPI port
-   spiClose(SPI_init);
-
-   // Terminating library
-   gpioTerminate();
-
-   exit(0);
+    return 0;
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//-------------------------------------------------------------//
-// #include <iostream>
-// #include <unistd.h>
-// #include <jetgpio.h>
-
-// int main(int argc, char *argv[])
-// {
-//    int Init;
-//    int SPI_init;
-//    int SPI_stat;
-//    char tx[7] = {0,};
-//    char rx[7] = {0,};
-
-//    Init = gpioInitialise();
-//    if (Init < 0)
-//    {
-//       /* jetgpio initialisation failed */
-//       printf("Jetgpio initialisation failed. Error code:  %d\n", Init);
-//       exit(Init);
-//    }
-//    else
-//    {
-//       /* jetgpio initialised okay*/
-//       printf("Jetgpio initialisation OK. Return code:  %d\n", Init);
-//    }
-
-//    /* Port SPI2 pins: 37, 22, 13 & 18
-//       to perform a simple loop test, pins 22: SPI2_MISO & 37:SPI2_MOSI should be connected
-//       with a short jumper cable, when the cable is disconnected the output on screen will show
-//       all the rx values as zeros 
-//       spiOpen() parameters go as follows: spiOpen(port number, speed in Hz, mode, cs pin delay in us, 
-//       bits per word, least significant bit first, cs change)
-//    */
-
-//    SPI_init = spiOpen(1, 250000, 0, 0, 8, 1, 1);  //5000000 spiOpen(1, 5000000, 0, 0, 8, 1, 1);
-//    if (SPI_init < 0)
-//    {
-//       /* Port SPI2 opening failed */
-//       printf("Port SPI2 opening failed. Error code:  %d\n", SPI_init);
-//       exit(Init);
-//    }
-//    else
-//    {
-//       /* Port SPI2 opened  okay*/
-//       printf("Port SPI2 opened OK. Return code:  %d\n", SPI_init);
-//    }
-
-//    tx[0] = 0xFF;
-//    tx[1] = 0xFF;
-//    tx[2] = 0x00;
-//    tx[3] = 0xCC;
-//    tx[4] = 0xDD;
-//    tx[5] = 0xFF;
-//    tx[6] = 0x11;
-
-//    //Transfer data through register numbers for x, y & z axis
-
-//    while(1)
-//    {
-//       SPI_stat = spiXfer(SPI_init, tx, rx, 7);
-//       sleep(1);
-//    }
-   
-//    // Closing spi port
-//    spiClose(SPI_init);
-
-//    // Terminating library
-//    gpioTerminate();
-
-//    exit(0);
-// } //end main 
+// 110 110 110 110 110 110 110 110    110 110 110 110 110 110 110 110    100 100 100 100 100 100 100 100
