@@ -330,10 +330,10 @@ int main() {
         ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
         sleep(1);
 
-        //LEDs ALL ON (Test Function To Test All 12 LEDs)
-         //   ledController.turnOnLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
-        //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
-        //   sleep(1);
+        // //LEDs ALL ON (Test Function To Test All 12 LEDs)
+        ledController.turnOnLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
+        ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
+        sleep(1);
 
        
     }//end while(1)
