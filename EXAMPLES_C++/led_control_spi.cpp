@@ -92,11 +92,11 @@ public:
      */
     void turnOffLeds(char *data, int size) {
         std::fill(data, data + size, OFF);
-        std::cout << "Data OFF: ";
-        for (int i = 0; i < size; ++i) {
-            std::cout << static_cast<int>(data[i]) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << "Data OFF: ";
+        // for (int i = 0; i < size; ++i) {
+        //     std::cout << static_cast<int>(data[i]) << " ";
+        // }
+        // std::cout << std::endl;
     }
 
     /**
@@ -106,11 +106,11 @@ public:
      */
     void turnOnLeds(char *data, int size) {
         std::fill(data, data + size, ON);
-        std::cout << "Data ON: ";
-        for (int i = 0; i < size; ++i) {
-            std::cout << static_cast<int>(data[i]) << " ";
-        }
-        std::cout << std::endl;
+        // std::cout << "Data ON: ";
+        // for (int i = 0; i < size; ++i) {
+        //     std::cout << static_cast<int>(data[i]) << " ";
+        // }
+        // std::cout << std::endl;
     }
 
     /**
@@ -124,10 +124,10 @@ public:
             int start_index = LED_number * ONE_LED_DATA;
             std::fill(data + start_index, data + start_index + ONE_LED_DATA, ON);
             std::cout << "Data ON: ";
-            for (int i = 0; i < size; ++i) {
-                std::cout << static_cast<int>(data[i]) << " ";
-            }
-            std::cout << std::endl;
+            // for (int i = 0; i < size; ++i) {
+            //     std::cout << static_cast<int>(data[i]) << " ";
+            // }
+            // std::cout << std::endl;
         } else {
             std::cout << "Wrong LED Number Specified. Must be between 0 & " << (NUM_OF_LEDS - 1) << std::endl;
         }
@@ -256,11 +256,11 @@ public:
         for (int i = 0; i < ONE_LED_DATA; ++i) {
             data[start_index + i] = colorArray[i];
         }
-        std::cout << "Data ON with Specific Color: ";
-        for (int i = 0; i < size; ++i) {
-            std::cout << static_cast<int>(data[i]) << " "; //it by default
-        }
-        std::cout << std::endl;
+        // std::cout << "Data ON with Specific Color: ";
+        // for (int i = 0; i < size; ++i) {
+        //     std::cout << static_cast<int>(data[i]) << " "; //it by default
+        // }
+        // std::cout << std::endl;
     } else {
         std::cout << "Wrong LED Number Specified. Must be between 0 & " << (NUM_OF_LEDS - 1) << std::endl;
     }
@@ -305,12 +305,18 @@ int main() {
         int red = 255;
         int blue = 255;
 
-        std::cout << "Enter Value of G (Between 0 to 255)";
+        std::cout << "Enter Value of G (Between 0 to 255)= ";
         std::cin >> green;
-        std::cout << "Enter Value of R (Between 0 to 255)";
+        std::cout << "Enter Value of R (Between 0 to 255)= ";
         std::cin >> red;
-        std::cout << "Enter Value of B (Between 0 to 255)";
+        std::cout << "Enter Value of B (Between 0 to 255)= ";
         std::cin >> blue;
+
+        //Conversion from Decimal to Binary
+        std::bitset<24> binaryValue = ledController.convertToBinary(green , red, blue);   //(G,R,B)
+        // std::cout << "Binary representation: " << binaryValue << std::endl;
+        // Call the function to convert the binary number to a char array
+        std::array<char, 24> result = ledController.convertToChar(binaryValue);
 
     while (true)
    {
@@ -319,39 +325,16 @@ int main() {
       ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
       sleep(1);
 
-    //     //Specific LED ON
-    //   ledController.turnOnLed(tx, NUM_OF_LEDS * ONE_LED_DATA, ledNumber);
-    //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
-    //   sleep(1);
-
-            //LEDs ALL ON
-    //   ledController.turnOnLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
-    //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
-    //   sleep(1);
-
-        //Conversion from Decimal to Binary(255,255,255)
-        std::bitset<24> binaryValue = ledController.convertToBinary(green , red, blue);   //(G,R,B)
-        std::cout << "Binary representation: " << binaryValue << std::endl;
-
-        // std::bitset<72> expandedBinary = ledController.expandBinary(binaryValue);
-        // std::cout << "Expanded Binary representation: " << expandedBinary << std::endl;
-   
-        // ledController.turnLEDcolor(tx, NUM_OF_LEDS * ONE_LED_DATA, expandedBinary) ;
-        // sleep(1);
-
-        // Call the function to convert the binary number to a char array
-        std::array<char, 24> result = ledController.convertToChar(binaryValue);
-
-        // Print the result to verify
-        std::cout << "Converted Char Array: ";
-        for (char c : result) {
-            std::cout << c << " ";
-        }
-        std::cout << std::endl;
-
+        //Specifc LED ON with User Specified Color at Input
         ledController.turnOnLedSpecificColor(tx, NUM_OF_LEDS * ONE_LED_DATA, ledNumber, result);
         ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
         sleep(1);
+
+        //LEDs ALL ON (Test Function To Test All 12 LEDs)
+         //   ledController.turnOnLeds(tx, NUM_OF_LEDS * ONE_LED_DATA);
+        //   ledController.performSPITransfer(ledController, tx, rx, NUM_OF_LEDS * ONE_LED_DATA);
+        //   sleep(1);
+
        
     }//end while(1)
 
@@ -360,7 +343,3 @@ int main() {
     return 0;
 }
 
-
-// 110 110 110 110 110 110 110 110    110 110 110 110 110 110 110 110    100 100 100 100 100 100 100 100
-// 
-//4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4 4
