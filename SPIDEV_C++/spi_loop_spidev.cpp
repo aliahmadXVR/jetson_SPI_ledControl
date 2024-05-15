@@ -83,9 +83,12 @@ int main() {
     const size_t len = 4;
     uint8_t data_to_send[len] = {0xAA, 0xBB, 0xCC, 0xDD};
 
+    while (1){
     // Perform loopback test
     loopback_test(data_to_send, len);
-
+    sleep(1);
+    }
+  
     close(spi_fd);
 
     return 0;
