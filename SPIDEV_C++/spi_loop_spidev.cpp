@@ -14,7 +14,7 @@ g++ -o spi_loop_spidev spi_loop_spidev.cpp
 static const char *device = "/dev/spidev0.0";
 static const uint8_t mode = 0;
 static const uint8_t bits_per_word = 8;
-static const uint32_t speed_hz = 1000000;
+static const uint32_t speed_hz = 1000000;   //1000000
 
 int spi_fd;
 

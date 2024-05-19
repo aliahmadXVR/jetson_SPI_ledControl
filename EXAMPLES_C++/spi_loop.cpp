@@ -36,7 +36,7 @@ else
    bits per word, least significant bit first, cs change)
 */
 
-SPI_init = spiOpen(1, 2500000, 0, 0, 8, 1, 1);  //5000000
+SPI_init = spiOpen(0, 2500000, 0, 0, 8, 1, 1);  //5000000
 if (SPI_init < 0)
 {
    /* Port SPI2 opening failed */
