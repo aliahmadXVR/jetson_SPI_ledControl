@@ -1,7 +1,6 @@
 # Running PWM on Jetson Agx Orin / Orin Nano
-This code has been forked from ```https://github.com/Rubberazer/JETGPIO```. 
 
-# Installtion for Running PWM 
+### Installtion for Running PWM 
 Follow the below instructions:
 
 Clone the repo using ```git clone -b pwm_test https://github.com/aliahmadXVR/jetson_SPI_ledControl.git```
@@ -12,9 +11,15 @@ Clone the repo using ```git clone -b pwm_test https://github.com/aliahmadXVR/jet
     sudo make install
 ```
 
-# Usage 
+### Usage 
 ```console
   cd EXAMPLES_C++/
   sudo ./jetgpio_PWM_example
 ```
 The above example will run for 1 minute and will vary the PWM on Jetson Orin Pin 32 from 100% to 0% and vice versa.
+
+## Re-compiling the code (for making changes)
+For re-compiling the code, go to ```EXAMPLES_C++``` folder. Use the below command to compile: 
+```console
+g++ -Wall -o jetgpio_PWM_example jetgpio_PWM_example.cpp -ljetgpio
+```
