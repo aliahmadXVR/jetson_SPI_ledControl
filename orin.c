@@ -21,8 +21,8 @@ OTHER DEALINGS IN THE SOFTWARE.
 For more information, please refer to <http://unlicense.org/>
 */
 
-/* jetgpio version 1.0 */
-/* Orin extension */
+/* jetgpio version 1.1 */
+/* Orin Nano & NX extension */
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1086,6 +1086,9 @@ void gpioTerminate(void) {
   // Ummapping PINMUX G7 registers
   munmap(basePINMUX_G7, pagesize);
 
+  // Ummapping PINMUX AON registers
+  munmap(basePINMUX_AON, pagesize);
+
   // Ummapping PINMUX G3 registers
   munmap(basePINMUX_G3, pagesize);
 
@@ -2125,8 +2128,13 @@ int gpioSetPWMfrequency(unsigned gpio, unsigned frequency) {
         printf( "Not possible to change clock rate on pwm1\n");
       }
       fclose(fptr);
+      *pinmux15 = 0x00000400;
+      *pincfg15 = CFGO_OUT;
+      pin15->CNF[0] = 0x00000001;
+      *PWM1 = 0x0;
+      *PWM1 = PFM;
+      pin_tracker |= (1 << 28);
       break;
-
     case 32:
       snprintf(buf, sizeof(buf), "/sys/kernel/debug/bpmp/debug/clk/pwm7/rate");
       fptr = fopen(buf, "r");
@@ -2142,6 +2150,12 @@ int gpioSetPWMfrequency(unsigned gpio, unsigned frequency) {
         printf( "Not possible to change clock rate on pwm7\n");
       }
       fclose(fptr);
+      *pinmux32 = 0x00000400;
+      *pincfg32 = CFGO_OUT;
+      pin32->CNF[0] = 0x00000001;
+      *PWM7 = 0x0;
+      *PWM7 = PFM;
+      pin_tracker |= (1 << 30);
       break;
     case 33:
       snprintf(buf, sizeof(buf), "/sys/kernel/debug/bpmp/debug/clk/pwm5/rate");
@@ -2158,30 +2172,6 @@ int gpioSetPWMfrequency(unsigned gpio, unsigned frequency) {
         printf( "Not possible to change clock rate on pwm5\n");
       }
       fclose(fptr);
-      break;
-    default:
-      status = -1;
-      printf("Only gpio numbers 15, 32 and 33 are accepted\n");
-    }  
-    
-    switch (gpio) {
-    case 15:	
-      *pinmux15 = 0x00000400;
-      *pincfg15 = CFGO_OUT;
-      pin15->CNF[0] = 0x00000001;
-      *PWM1 = 0x0;
-      *PWM1 = PFM;
-      pin_tracker |= (1 << 28);
-      break;
-    case 32:
-      *pinmux32 = 0x00000400;
-      *pincfg32 = CFGO_OUT;
-      pin32->CNF[0] = 0x00000001;
-      *PWM7 = 0x0;
-      *PWM7 = PFM;
-      pin_tracker |= (1 << 30);
-      break;
-    case 33:
       *pinmux33 = 0x00000401;
       *pincfg33 = CFGO_OUT;
       pin33->CNF[0] = 0x00000001;
@@ -2192,7 +2182,7 @@ int gpioSetPWMfrequency(unsigned gpio, unsigned frequency) {
     default:
       status = -1;
       printf("Only gpio numbers 15, 32 and 33 are accepted\n");
-    }		
+    }  		
   }
   else {printf("Only frequencies from 50 to 1595000 Hz are allowed\n");
     status =-2;}
@@ -2204,7 +2194,6 @@ int gpioPWM(unsigned gpio, unsigned dutycycle) {
   
   if ((dutycycle >= 0) && (dutycycle <=256)) {
     switch (gpio) {
-
     case 15:
       *PWM1 &= ~(0xFFFF0000);
       *PWM1 |= dutycycle<<16;
@@ -2222,7 +2211,7 @@ int gpioPWM(unsigned gpio, unsigned dutycycle) {
       break;
     default:
       status = -1;
-      printf("Only gpio numbers 32 and 33 are accepted,\n");
+      printf("Only gpio numbers 15, 32 and 33 are accepted,\n");
     }
   }
   else {printf("Only a dutycycle from 0 to 256 is allowed\n");
@@ -2614,7 +2603,7 @@ int spiOpen(unsigned spiChan, unsigned speed, unsigned mode, unsigned cs_delay, 
     pin_tracker |= (1 << 31);
   }
 
-  if (spiChan == 1) {
+  if (spiChan == 2) {
     pin37->CNF[0] |= 0x00000003;
     *pinmux37 = 0x00000400;
     *pincfg37 = CFGO_OUT;
@@ -2704,7 +2693,7 @@ int spiOpen(unsigned spiChan, unsigned speed, unsigned mode, unsigned cs_delay, 
 }
 
 int spiClose(unsigned handle) {
-  if (handle > 1) {
+  if (handle > 2) {
     printf( "Bad handle (%d)", handle);
     return -1;
   }
