@@ -16,7 +16,7 @@ Clone the repo using ```git clone -b pwm_test https://github.com/aliahmadXVR/jet
   cd EXAMPLES_C++/
   sudo ./jetgpio_PWM_example
 ```
-The above example will run for 1 minute and will vary the PWM on Jetson Orin Pin 32 from 100% to 0% and vice versa.
+The above example will run for 1 minute and will vary the PWM on Jetson Orin Pin 18 from 100% to 0% and vice versa.
 
 ## Re-compiling the code (for making changes)
 For re-compiling the code, go to ```EXAMPLES_C++``` folder. Use the below command to compile: 
