@@ -23,3 +23,9 @@ For re-compiling the code, go to ```EXAMPLES_C++``` folder. Use the below comman
 ```console
 g++ -Wall -o jetgpio_PWM_example jetgpio_PWM_example.cpp -ljetgpio
 ```
+
+## Code with functions
+```console
+  cd EXAMPLES_C++/
+  sudo ./pwm_functions
+```
